@@ -1,0 +1,104 @@
+<html>
+<head>
+
+    <title> Three.js Template </title>
+
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <link type="text/css" rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+
+    <canvas id="c"></canvas>
+
+</body>
+
+<script type="module">
+
+//Module imports
+import * as THREE from '../build/three.module.js';
+import{ OrbitControls } from '../jsm/OrbitControls.js';
+import {GLTFLoader} from "../jsm/GLTFLoader.js"
+
+// Canvas Initialization
+const canvas = document.querySelector('#c');
+const renderer  = new THREE.WebGLRenderer({canvas});
+renderer.setSize(window.innerWidth*2, window.innerHeight*2, false );
+renderer.outputEncoding = THREE.sRGBEncoding;
+
+// Scene Initialization
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+// Camera Initialization
+const fov = 75;
+const aspect = (window.innerWidth/ window.innerHeight);
+const near = 0.1;
+const far = 500;
+
+const camera = new THREE.PerspectiveCamera (fov, aspect, near, far);
+
+const controls = new OrbitControls( camera, renderer.domElement );
+camera.position.set(0, 1, 1)
+controls.update();
+
+const light = new THREE.AmbientLight( 0xffffff, 1);
+scene.add( light );
+
+const textureLoader = new THREE.TextureLoader();
+
+let textures = [];
+
+for (let i = 0; i < 3 ; i++){
+    let texture = textureLoader.load("../images/text" + String(i+1) + ".jpg");
+    texture.flipY = false;
+    texture.needsUpdate = true;
+    texture.encoding = THREE.sRGBEncoding;
+    textures.push(texture);
+}
+
+const loader = new GLTFLoader();
+let room;
+
+loader.load(
+    '../models/Chair.gltf',
+    function ( gltf ) {
+        room = gltf.scene;
+        console.log(gltf.scene.children[0].material.map);
+        gltf.scene.children[0].material.map = textures[0];
+        console.log(gltf.scene.children[0].material.map);
+        scene.add(gltf.scene);
+    }
+)
+
+
+// Animate
+let frameDuration = 0.09;
+let delta = 0.02;
+let time = 0;
+let currentFrame = 0;
+function animate() {
+    if (room){
+        if(time < frameDuration){
+            time += delta; 
+        } else{
+            currentFrame += 1
+            if (currentFrame > 2){
+                currentFrame = 0;
+            }
+            room.children[0].material.map = textures[currentFrame];
+            time = 0
+        }
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+</script>
+</html>
